@@ -1,6 +1,10 @@
 import { notFound } from 'next/navigation';
 import fs from 'fs';
 import path from 'path';
+import EmailPopup from '../../components/EmailPopup';
+import AdSenseAd from '../../components/AdSenseAd';
+import RelatedArticles from '../../components/RelatedArticles';
+import Breadcrumbs from '../../components/Breadcrumbs';
 
 interface Article {
   keyword: string;
@@ -10,6 +14,13 @@ interface Article {
   word_count: number;
   products_mentioned: string[];
   generated_at: string;
+}
+
+interface ArticleListItem {
+  keyword: string;
+  title: string;
+  slug: string;
+  format: string;
 }
 
 async function getArticle(slug: string): Promise<Article | null> {
@@ -42,6 +53,41 @@ async function getAllArticleSlugs(): Promise<string[]> {
     .map(file => file.replace('.json', ''));
 }
 
+async function getAllArticles(): Promise<ArticleListItem[]> {
+  const articlesDir = path.join(process.cwd(), 'public/data/articles');
+  
+  if (!fs.existsSync(articlesDir)) {
+    return [];
+  }
+  
+  const files = fs.readdirSync(articlesDir);
+  const articles: ArticleListItem[] = [];
+  
+  for (const file of files) {
+    if (file.endsWith('.json')) {
+      try {
+        const filePath = path.join(articlesDir, file);
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const article = JSON.parse(content);
+        
+        if (article.keyword && article.title) {
+          const slug = file.replace('.json', '');
+          articles.push({
+            keyword: article.keyword,
+            title: article.title,
+            slug: slug,
+            format: article.format || 'Article'
+          });
+        }
+      } catch (error) {
+        console.error(`Error reading ${file}:`, error);
+      }
+    }
+  }
+  
+  return articles;
+}
+
 export async function generateStaticParams() {
   const slugs = await getAllArticleSlugs();
   return slugs.map((slug) => ({
@@ -71,6 +117,8 @@ export default async function ArticlePage({ params }: { params: { slug: string }
     notFound();
   }
   
+  const allArticles = await getAllArticles();
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
@@ -85,9 +133,15 @@ export default async function ArticlePage({ params }: { params: { slug: string }
       </header>
       
       <main className="max-w-4xl mx-auto px-4 py-8">
+        <Breadcrumbs articleTitle={article.title} articleFormat={article.format} />
         <article className="bg-white rounded-lg shadow-md p-8">
+          <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+            <p className="text-sm text-gray-700">
+              <strong>Disclosure:</strong> This article contains affiliate links. If you choose to purchase through these links, we may earn a commission at no additional cost to you. This helps us continue providing free health information.
+            </p>
+          </div>
           <div className="prose prose-lg max-w-none">
-            <div dangerouslySetInnerHTML={{ __html: convertMarkdownToHTML(article.content) }} />
+            <div dangerouslySetInnerHTML={{ __html: convertMarkdownToHTML(article.content, true) }} />
           </div>
           
           <div className="mt-8 pt-8 border-t border-gray-200">
@@ -106,10 +160,23 @@ export default async function ArticlePage({ params }: { params: { slug: string }
             Always consult with a qualified healthcare provider before making any changes to your health regimen.
           </p>
         </div>
+        
+        <RelatedArticles 
+          currentKeyword={article.keyword}
+          currentSlug={params.slug}
+          allArticles={allArticles}
+        />
       </main>
+      
+      <EmailPopup />
       
       <footer className="bg-gray-800 text-white mt-16">
         <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="mb-6 p-4 bg-gray-700 rounded-lg">
+            <p className="text-sm text-gray-300">
+              <strong>Affiliate Disclosure:</strong> This website contains affiliate links. If you choose to purchase through these links, we may earn a commission at no additional cost to you. This helps us continue providing free health information.
+            </p>
+          </div>
           <div className="text-center">
             <p className="text-sm">
               © {new Date().getFullYear()} The Healthy Solutions Report. All rights reserved.
@@ -126,7 +193,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
   );
 }
 
-function convertMarkdownToHTML(markdown: string): string {
+function convertMarkdownToHTML(markdown: string, includeAds: boolean = false): string {
   let html = markdown;
   
   // Convert headers
@@ -148,12 +215,30 @@ function convertMarkdownToHTML(markdown: string): string {
   html = html.replace(/(<li[\s\S]*?<\/li>)/g, '<ul class="list-disc my-4">$1</ul>');
   
   // Convert paragraphs
-  html = html.split('\n\n').map(para => {
+  const paragraphs = html.split('\n\n').map(para => {
     if (para.startsWith('<h') || para.startsWith('<ul') || para.startsWith('<li')) {
       return para;
     }
     return `<p class="mb-4 leading-relaxed">${para}</p>`;
-  }).join('\n');
+  });
+  
+  // Inject AdSense ads at strategic positions if requested
+  if (includeAds && paragraphs.length > 5) {
+    const adHTML = '<div class="my-8"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3425980701787946" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script></div>';
+    
+    // Insert ads at 25%, 50%, and 75% through the content
+    const positions = [
+      Math.floor(paragraphs.length * 0.25),
+      Math.floor(paragraphs.length * 0.50),
+      Math.floor(paragraphs.length * 0.75)
+    ];
+    
+    positions.reverse().forEach(pos => {
+      paragraphs.splice(pos, 0, adHTML);
+    });
+  }
+  
+  html = paragraphs.join('\n');
   
   return html;
 }

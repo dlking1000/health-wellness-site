@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import Link from 'next/link';
+import EmailPopup from './components/EmailPopup';
 
 interface Article {
   keyword: string;
@@ -103,8 +104,15 @@ export default function Home() {
         )}
       </main>
       
+      <EmailPopup />
+      
       <footer className="bg-gray-800 text-white mt-16">
         <div className="max-w-7xl mx-auto px-4 py-12">
+          <div className="mb-8 p-4 bg-gray-700 rounded-lg">
+            <p className="text-sm text-gray-300">
+              <strong>Affiliate Disclosure:</strong> This website contains affiliate links. If you choose to purchase through these links, we may earn a commission at no additional cost to you. This helps us continue providing free health information. We only recommend products we believe may be helpful to our readers.
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <h3 className="text-lg font-bold mb-4">The Healthy Solutions Report</h3>
