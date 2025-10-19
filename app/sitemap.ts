@@ -2,6 +2,10 @@ import { MetadataRoute } from 'next'
 import fs from 'fs'
 import path from 'path'
 
+// Force dynamic generation of sitemap
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://thehealthysolutionsreport.com'
   
