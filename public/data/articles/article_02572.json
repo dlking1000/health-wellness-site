@@ -10,5 +10,8 @@
   "category": "Nutrition",
   "tags": [],
   "source": "claude_batch",
-  "custom_id": "request-543"
+  "custom_id": "request-543",
+  "products_mentioned": [
+    "ProNail Complex"
+  ]
 }

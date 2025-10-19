@@ -10,5 +10,8 @@
   "category": "Nutrition",
   "tags": [],
   "source": "openai_batch",
-  "custom_id": "request-5687"
+  "custom_id": "request-5687",
+  "products_mentioned": [
+    "ProNail Complex"
+  ]
 }

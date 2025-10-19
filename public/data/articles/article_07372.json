@@ -10,5 +10,8 @@
   "category": "Mental Health",
   "tags": [],
   "source": "openai_batch",
-  "custom_id": "request-3442"
+  "custom_id": "request-3442",
+  "products_mentioned": [
+    "Kerassentials"
+  ]
 }

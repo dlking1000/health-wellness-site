@@ -10,5 +10,8 @@
   "category": "Sleep",
   "tags": [],
   "source": "openai_batch",
-  "custom_id": "request-397"
+  "custom_id": "request-397",
+  "products_mentioned": [
+    "PrimeBiome"
+  ]
 }

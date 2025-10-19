@@ -10,5 +10,8 @@
   "category": "Health & Wellness",
   "tags": [],
   "source": "openai_batch",
-  "custom_id": "request-4905"
+  "custom_id": "request-4905",
+  "products_mentioned": [
+    "ProNail Complex"
+  ]
 }

@@ -10,5 +10,8 @@
   "category": "Fitness",
   "tags": [],
   "source": "claude_batch",
-  "custom_id": "request-563"
+  "custom_id": "request-563",
+  "products_mentioned": [
+    "Kerassentials"
+  ]
 }

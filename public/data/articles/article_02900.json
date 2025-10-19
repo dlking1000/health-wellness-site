@@ -10,5 +10,8 @@
   "category": "Nutrition",
   "tags": [],
   "source": "claude_batch",
-  "custom_id": "request-1025"
+  "custom_id": "request-1025",
+  "products_mentioned": [
+    "Kerassentials"
+  ]
 }

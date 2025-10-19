@@ -10,5 +10,8 @@
   "category": "Fitness",
   "tags": [],
   "source": "openai_batch",
-  "custom_id": "request-796"
+  "custom_id": "request-796",
+  "products_mentioned": [
+    "PrimeBiome"
+  ]
 }

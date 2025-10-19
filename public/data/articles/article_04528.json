@@ -10,5 +10,8 @@
   "category": "Sleep",
   "tags": [],
   "source": "openai_batch",
-  "custom_id": "request-598"
+  "custom_id": "request-598",
+  "products_mentioned": [
+    "Pineal XT"
+  ]
 }

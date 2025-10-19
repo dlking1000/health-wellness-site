@@ -10,5 +10,8 @@
   "category": "Sleep",
   "tags": [],
   "source": "claude_batch",
-  "custom_id": "request-2216"
+  "custom_id": "request-2216",
+  "products_mentioned": [
+    "ProNail Complex"
+  ]
 }

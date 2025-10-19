@@ -10,5 +10,8 @@
   "category": "Health & Wellness",
   "tags": [],
   "source": "claude_batch",
-  "custom_id": "request-1741"
+  "custom_id": "request-1741",
+  "products_mentioned": [
+    "ProNail Complex"
+  ]
 }

@@ -10,5 +10,8 @@
   "category": "Nutrition",
   "tags": [],
   "source": "claude_batch",
-  "custom_id": "request-2387"
+  "custom_id": "request-2387",
+  "products_mentioned": [
+    "Pineal XT"
+  ]
 }

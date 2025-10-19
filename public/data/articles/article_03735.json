@@ -10,5 +10,8 @@
   "category": "Fitness",
   "tags": [],
   "source": "claude_batch",
-  "custom_id": "request-2237"
+  "custom_id": "request-2237",
+  "products_mentioned": [
+    "Pineal XT"
+  ]
 }

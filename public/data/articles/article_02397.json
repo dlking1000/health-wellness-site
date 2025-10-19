@@ -10,5 +10,8 @@
   "category": "Nutrition",
   "tags": [],
   "source": "claude_batch",
-  "custom_id": "request-293"
+  "custom_id": "request-293",
+  "products_mentioned": [
+    "PrimeBiome"
+  ]
 }

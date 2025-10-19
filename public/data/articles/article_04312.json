@@ -10,5 +10,8 @@
   "category": "Mental Health",
   "tags": [],
   "source": "openai_batch",
-  "custom_id": "request-382"
+  "custom_id": "request-382",
+  "products_mentioned": [
+    "PrimeBiome"
+  ]
 }

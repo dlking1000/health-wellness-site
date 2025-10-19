@@ -10,5 +10,8 @@
   "category": "Health & Wellness",
   "tags": [],
   "source": "openai_batch",
-  "custom_id": "request-4883"
+  "custom_id": "request-4883",
+  "products_mentioned": [
+    "Pineal XT"
+  ]
 }

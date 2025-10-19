@@ -10,5 +10,8 @@
   "category": "Nutrition",
   "tags": [],
   "source": "openai_batch",
-  "custom_id": "request-4312"
+  "custom_id": "request-4312",
+  "products_mentioned": [
+    "Kerassentials"
+  ]
 }

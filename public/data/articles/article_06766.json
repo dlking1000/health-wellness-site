@@ -10,5 +10,8 @@
   "category": "Health & Wellness",
   "tags": [],
   "source": "openai_batch",
-  "custom_id": "request-2836"
+  "custom_id": "request-2836",
+  "products_mentioned": [
+    "PrimeBiome"
+  ]
 }

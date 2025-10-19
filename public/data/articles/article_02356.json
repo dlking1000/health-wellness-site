@@ -10,5 +10,8 @@
   "category": "Mental Health",
   "tags": [],
   "source": "claude_batch",
-  "custom_id": "request-231"
+  "custom_id": "request-231",
+  "products_mentioned": [
+    "Kerassentials"
+  ]
 }

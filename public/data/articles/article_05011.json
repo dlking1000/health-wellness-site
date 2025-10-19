@@ -10,5 +10,8 @@
   "category": "Mental Health",
   "tags": [],
   "source": "openai_batch",
-  "custom_id": "request-1081"
+  "custom_id": "request-1081",
+  "products_mentioned": [
+    "ProNail Complex"
+  ]
 }

@@ -10,5 +10,8 @@
   "category": "Fitness",
   "tags": [],
   "source": "claude_batch",
-  "custom_id": "request-1337"
+  "custom_id": "request-1337",
+  "products_mentioned": [
+    "ProNail Complex"
+  ]
 }

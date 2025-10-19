@@ -10,5 +10,8 @@
   "category": "Sleep",
   "tags": [],
   "source": "openai_batch",
-  "custom_id": "request-5124"
+  "custom_id": "request-5124",
+  "products_mentioned": [
+    "ProNail Complex"
+  ]
 }
