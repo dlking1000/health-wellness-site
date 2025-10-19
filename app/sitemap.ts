@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 import fs from 'fs'
 import path from 'path'
 
-// Force dynamic generation of sitemap
+// Force dynamic generation of sitemap - Updated for 10,000 articles
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
