@@ -40,20 +40,7 @@ async function getArticle(slug: string): Promise<Article | null> {
   }
 }
 
-async function getAllArticleSlugs(): Promise<string[]> {
-  const articlesDir = path.join(process.cwd(), 'public/data/articles');
-  
-  if (!fs.existsSync(articlesDir)) {
-    return [];
-  }
-  
-  const files = fs.readdirSync(articlesDir);
-  return files
-    .filter(file => file.endsWith('.json'))
-    .map(file => file.replace('.json', ''));
-}
-
-async function getAllArticles(): Promise<ArticleListItem[]> {
+async function getRelatedArticles(currentKeyword: string, currentSlug: string): Promise<ArticleListItem[]> {
   const articlesDir = path.join(process.cwd(), 'public/data/articles');
   
   if (!fs.existsSync(articlesDir)) {
@@ -63,37 +50,40 @@ async function getAllArticles(): Promise<ArticleListItem[]> {
   const files = fs.readdirSync(articlesDir);
   const articles: ArticleListItem[] = [];
   
-  for (const file of files) {
-    if (file.endsWith('.json')) {
-      try {
-        const filePath = path.join(articlesDir, file);
-        const content = fs.readFileSync(filePath, 'utf-8');
-        const article = JSON.parse(content);
-        
-        if (article.keyword && article.title) {
-          const slug = file.replace('.json', '');
-          articles.push({
-            keyword: article.keyword,
-            title: article.title,
-            slug: slug,
-            format: article.format || 'Article'
-          });
-        }
-      } catch (error) {
-        console.error(`Error reading ${file}:`, error);
+  // Get a random sample of 6 articles (excluding current)
+  const shuffled = files
+    .filter(file => file.endsWith('.json') && file.replace('.json', '') !== currentSlug)
+    .sort(() => 0.5 - Math.random())
+    .slice(0, 6);
+  
+  for (const file of shuffled) {
+    try {
+      const filePath = path.join(articlesDir, file);
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const article = JSON.parse(content);
+      
+      if (article.keyword && article.title) {
+        const slug = file.replace('.json', '');
+        articles.push({
+          keyword: article.keyword,
+          title: article.title,
+          slug: slug,
+          format: article.format || 'Article'
+        });
       }
+    } catch (error) {
+      console.error(`Error reading ${file}:`, error);
     }
   }
   
   return articles;
 }
 
-export async function generateStaticParams() {
-  const slugs = await getAllArticleSlugs();
-  return slugs.map((slug) => ({
-    slug: slug,
-  }));
-}
+// CRITICAL: Remove generateStaticParams to enable dynamic rendering
+// This allows all 9,981 articles to be accessible without pre-building them
+
+export const dynamic = 'force-dynamic'; // Force dynamic rendering
+export const dynamicParams = true; // Allow dynamic params
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const article = await getArticle(params.slug);
@@ -117,7 +107,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
     notFound();
   }
   
-  const allArticles = await getAllArticles();
+  const relatedArticles = await getRelatedArticles(article.keyword, params.slug);
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -164,7 +154,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
         <RelatedArticles 
           currentKeyword={article.keyword}
           currentSlug={params.slug}
-          allArticles={allArticles}
+          allArticles={relatedArticles}
         />
       </main>
       

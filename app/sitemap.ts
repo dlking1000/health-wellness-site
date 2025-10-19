@@ -15,23 +15,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     files.forEach((file) => {
       if (file.endsWith('.json')) {
         try {
+          const slug = file.replace('.json', '')
           const filePath = path.join(articlesDir, file)
           const content = fs.readFileSync(filePath, 'utf-8')
           const article = JSON.parse(content)
           
-          if (article.keyword) {
-            const slug = article.keyword
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, '-')
-              .replace(/^-+|-+$/g, '')
-            
-            articles.push({
-              url: `${baseUrl}/article/${slug}`,
-              lastModified: article.generated_at ? new Date(article.generated_at) : new Date(),
-              changeFrequency: 'monthly',
-              priority: 0.7,
-            })
-          }
+          articles.push({
+            url: `${baseUrl}/article/${slug}`,
+            lastModified: article.generated_at ? new Date(article.generated_at) : new Date(),
+            changeFrequency: 'monthly',
+            priority: 0.7,
+          })
         } catch (error) {
           console.error(`Error processing ${file}:`, error)
         }
@@ -46,6 +40,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 1,
+    },
+    {
+      url: `${baseUrl}/about`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/privacy`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.5,
     },
   ]
   

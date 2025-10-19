@@ -11,7 +11,18 @@ interface Article {
   word_count: number;
 }
 
-function getAllArticles(): { slug: string; article: Article }[] {
+function getArticleCount(): number {
+  const articlesDir = path.join(process.cwd(), 'public/data/articles');
+  
+  if (!fs.existsSync(articlesDir)) {
+    return 0;
+  }
+  
+  const files = fs.readdirSync(articlesDir);
+  return files.filter(file => file.endsWith('.json')).length;
+}
+
+function getArticlePage(page: number = 1, perPage: number = 50): { slug: string; article: Article }[] {
   const articlesDir = path.join(process.cwd(), 'public/data/articles');
   
   if (!fs.existsSync(articlesDir)) {
@@ -19,23 +30,30 @@ function getAllArticles(): { slug: string; article: Article }[] {
   }
   
   const files = fs.readdirSync(articlesDir);
-  const articles = files
+  const jsonFiles = files
     .filter(file => file.endsWith('.json'))
-    .map(file => {
-      const slug = file.replace('.json', '');
-      const filePath = path.join(articlesDir, file);
-      const fileContents = fs.readFileSync(filePath, 'utf8');
-      const article = JSON.parse(fileContents);
-      return { slug, article };
-    })
-    .sort((a, b) => a.slug.localeCompare(b.slug));
+    .sort();
+  
+  // Calculate pagination
+  const start = (page - 1) * perPage;
+  const end = start + perPage;
+  const pageFiles = jsonFiles.slice(start, end);
+  
+  const articles = pageFiles.map(file => {
+    const slug = file.replace('.json', '');
+    const filePath = path.join(articlesDir, file);
+    const fileContents = fs.readFileSync(filePath, 'utf8');
+    const article = JSON.parse(fileContents);
+    return { slug, article };
+  });
   
   return articles;
 }
 
 export default function Home() {
-  const articles = getAllArticles();
-  const totalArticles = articles.length;
+  const totalArticles = getArticleCount();
+  const articles = getArticlePage(1, 50); // Show first 50 articles
+  const totalPages = Math.ceil(totalArticles / 50);
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -94,6 +112,20 @@ export default function Home() {
             </Link>
           ))}
         </div>
+        
+        {/* Pagination Info */}
+        {totalArticles > 50 && (
+          <div className="mt-12 text-center">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 inline-block">
+              <p className="text-gray-700 mb-2">
+                Showing <strong>1-{Math.min(50, totalArticles)}</strong> of <strong>{totalArticles.toLocaleString()}</strong> articles
+              </p>
+              <p className="text-sm text-gray-600">
+                Use the search function or browse by category to find specific health topics
+              </p>
+            </div>
+          </div>
+        )}
         
         {articles.length === 0 && (
           <div className="text-center py-12">
