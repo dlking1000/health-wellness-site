@@ -48,15 +48,23 @@ async function getRelatedArticles(currentKeyword: string, currentSlug: string): 
   }
   
   const files = fs.readdirSync(articlesDir);
-  const articles: ArticleListItem[] = [];
+  const currentWords = currentKeyword.toLowerCase().split(/\s+/).filter(w => w.length > 3);
   
-  // Get a random sample of 6 articles (excluding current)
-  const shuffled = files
+  interface ScoredArticle {
+    article: ArticleListItem;
+    score: number;
+  }
+  
+  const scoredArticles: ScoredArticle[] = [];
+  
+  // Sample a larger set for better matching (200 articles)
+  const sampleSize = Math.min(200, files.length);
+  const sampledFiles = files
     .filter(file => file.endsWith('.json') && file.replace('.json', '') !== currentSlug)
     .sort(() => 0.5 - Math.random())
-    .slice(0, 6);
+    .slice(0, sampleSize);
   
-  for (const file of shuffled) {
+  for (const file of sampledFiles) {
     try {
       const filePath = path.join(articlesDir, file);
       const content = fs.readFileSync(filePath, 'utf-8');
@@ -64,11 +72,29 @@ async function getRelatedArticles(currentKeyword: string, currentSlug: string): 
       
       if (article.keyword && article.title) {
         const slug = file.replace('.json', '');
-        articles.push({
-          keyword: article.keyword,
-          title: article.title,
-          slug: slug,
-          format: article.format || 'Article'
+        const articleWords = article.keyword.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+        
+        // Calculate keyword overlap score
+        let score = 0;
+        for (const word of currentWords) {
+          if (articleWords.some((aw: string) => aw.includes(word) || word.includes(aw))) {
+            score += 2; // Exact or partial match
+          }
+        }
+        
+        // Bonus for same format type
+        if (article.format === currentKeyword.split(' ')[0]) {
+          score += 1;
+        }
+        
+        scoredArticles.push({
+          article: {
+            keyword: article.keyword,
+            title: article.title,
+            slug: slug,
+            format: article.format || 'Article'
+          },
+          score: score
         });
       }
     } catch (error) {
@@ -76,7 +102,14 @@ async function getRelatedArticles(currentKeyword: string, currentSlug: string): 
     }
   }
   
-  return articles;
+  // Sort by score and take top 6
+  scoredArticles.sort((a, b) => b.score - a.score);
+  
+  // Get top 4 most relevant + 2 random for diversity
+  const topRelevant = scoredArticles.slice(0, 4).map(sa => sa.article);
+  const randomOnes = scoredArticles.slice(4).sort(() => 0.5 - Math.random()).slice(0, 2).map(sa => sa.article);
+  
+  return [...topRelevant, ...randomOnes];
 }
 
 // CRITICAL: Remove generateStaticParams to enable dynamic rendering
