@@ -50,6 +50,10 @@ function getArticlePage(page: number = 1, perPage: number = 50): { slug: string;
   return articles;
 }
 
+// Force dynamic rendering to always show current article count
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function Home() {
   const totalArticles = getArticleCount();
   const articles = getArticlePage(1, 50); // Show first 50 articles
