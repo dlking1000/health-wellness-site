@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '../../lib/supabase';
 
 // Force dynamic generation of sitemap
 export const dynamic = 'force-dynamic'
@@ -8,10 +8,8 @@ export const revalidate = 0
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://thehealthysolutionsreport.com'
   
-  // Initialize Supabase client
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ftfivtdofqnktacokgtj.supabase.co';
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0Zml2dGRvZnFua3RhY29rZ3RqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzMDMyOTAsImV4cCI6MjA3Njg3OTI5MH0.4zjtYpTX18PlmYdfr-TlzrO9g1ZIKgkvTI859g359KQ';
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  // Use the Supabase client from lib
+  const supabase = createClient();
   
   // Fetch all articles from database with pagination
   const articles: MetadataRoute.Sitemap = []
