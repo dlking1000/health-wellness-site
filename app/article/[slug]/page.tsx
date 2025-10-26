@@ -28,7 +28,7 @@ interface ArticleListItem {
 async function getArticle(slug: string): Promise<Article | null> {
   try {
     const { data, error } = await supabase
-      .table('articles')
+      .from('articles')
       .select('*')
       .eq('slug', slug)
       .single();
@@ -49,7 +49,7 @@ async function getRelatedArticles(currentKeyword: string, currentSlug: string): 
   try {
     // Get a sample of articles for matching
     const { data: articles, error } = await supabase
-      .table('articles')
+      .from('articles')
       .select('keyword, title, slug, format')
       .neq('slug', currentSlug)
       .limit(200);
