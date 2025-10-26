@@ -15,7 +15,8 @@ async function getArticleCount(): Promise<number> {
   try {
     const { count, error } = await supabase
       .from('articles')
-      .select('*', { count: 'exact', head: true });
+      .select('*', { count: 'exact', head: true })
+      .eq('published', true);
     
     if (error) {
       console.error('Error counting articles:', error);
@@ -35,6 +36,7 @@ async function getFeaturedArticles(): Promise<Article[]> {
     const { data, error } = await supabase
       .from('articles')
       .select('keyword, title, content, format, word_count, slug')
+      .eq('published', true)
       .limit(15);
     
     if (error || !data) {

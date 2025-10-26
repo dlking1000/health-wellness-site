@@ -32,6 +32,7 @@ async function getArticle(slug: string): Promise<Article | null> {
       .from('articles')
       .select('*')
       .eq('slug', slug)
+      .eq('published', true)
       .single();
     
     if (error || !data) {
@@ -52,6 +53,7 @@ async function getRelatedArticles(currentKeyword: string, currentSlug: string): 
     const { data: articles, error } = await supabase
       .from('articles')
       .select('keyword, title, slug, format')
+      .eq('published', true)
       .neq('slug', currentSlug)
       .limit(200);
     

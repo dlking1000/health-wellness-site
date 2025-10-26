@@ -20,6 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const { data, error } = await supabase
         .from('articles')
         .select('slug, generated_at')
+        .eq('published', true)
         .range(offset, offset + pageSize - 1)
       
       if (error) {
