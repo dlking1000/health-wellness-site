@@ -32,7 +32,7 @@ async function getArticleCount(): Promise<number> {
 
 async function getFeaturedArticles(): Promise<Article[]> {
   try {
-    // Get 15 random articles for the homepage
+    // Get 15 published articles for the homepage
     const { data, error } = await supabase
       .from('articles')
       .select('keyword, title, content, format, word_count, slug')
@@ -51,9 +51,10 @@ async function getFeaturedArticles(): Promise<Article[]> {
   }
 }
 
-// Force dynamic rendering
+// Force dynamic rendering - no caching
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 export default async function Home() {
   const totalArticles = await getArticleCount();
@@ -135,52 +136,64 @@ export default async function Home() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {articles.map((article) => (
-              <Link
-                key={article.slug}
-                href={`/article/${article.slug}`}
-                className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 p-6 border border-gray-200 hover:border-blue-500 group"
-              >
-                <div className="mb-3">
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                    {article.format}
-                  </span>
-                </div>
-                
-                <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                  {article.title || article.keyword}
-                </h3>
-                
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                  {article.content.substring(0, 150).replace(/[#*]/g, '')}...
-                </p>
-                
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span className="flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                    {article.word_count} words
-                  </span>
-                  <span className="text-blue-600 font-medium group-hover:translate-x-1 transition-transform inline-flex items-center">
-                    Read more
-                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
+          {articles.length === 0 ? (
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg">
+              <p className="text-gray-700">
+                <strong>Coming Soon!</strong> We're currently enhancing our articles with additional research, citations, and expert insights. Check back soon for high-quality, evidence-based health content.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {articles.map((article) => (
+                <Link
+                  key={article.slug}
+                  href={`/article/${article.slug}`}
+                  className="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 p-6 border border-gray-200 hover:border-blue-500 group"
+                >
+                  <div className="mb-3">
+                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                      {article.format}
+                    </span>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    {article.title || article.keyword}
+                  </h3>
+                  
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    {article.content.substring(0, 150).replace(/[#*]/g, '')}...
+                  </p>
+                  
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span className="flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      {article.word_count} words
+                    </span>
+                    <span className="text-blue-600 font-medium group-hover:translate-x-1 transition-transform inline-flex items-center">
+                      Read more
+                      <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Browse More Section */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg p-8 text-center text-white">
-          <h3 className="text-2xl font-bold mb-3">Explore {totalArticles.toLocaleString()}+ Health Articles</h3>
+          <h3 className="text-2xl font-bold mb-3">
+            {totalArticles > 0 ? `Explore ${totalArticles.toLocaleString()}+ Health Articles` : 'Quality Content Coming Soon'}
+          </h3>
           <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-            Discover comprehensive, evidence-based information on nutrition, mental health, digestive wellness, 
-            brain health, and more. Our extensive library covers all aspects of health and wellness.
+            {totalArticles > 0 
+              ? 'Discover comprehensive, evidence-based information on nutrition, mental health, digestive wellness, brain health, and more. Our extensive library covers all aspects of health and wellness.'
+              : 'We\'re enhancing our content library with authoritative citations, expert insights, and comprehensive research to provide you with the highest quality health information.'
+            }
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <span className="bg-white/20 px-4 py-2 rounded-lg text-sm font-medium">Nutrition & Diet</span>
@@ -221,7 +234,7 @@ export default async function Home() {
           <div className="bg-white rounded-lg shadow-md p-6 text-center">
             <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
               </svg>
             </div>
             <h4 className="font-semibold text-gray-900 mb-2">Regularly Updated</h4>
@@ -233,72 +246,47 @@ export default async function Home() {
       </main>
 
       <EmailPopup />
-
-      {/* Enhanced Footer */}
+      
       <footer className="bg-gray-900 text-white mt-16">
         <div className="max-w-7xl mx-auto px-4 py-12">
-          {/* Medical Disclaimer */}
-          <div className="mb-8 p-6 bg-yellow-900/30 border-l-4 border-yellow-500 rounded-lg">
-            <h4 className="font-semibold text-yellow-200 mb-2">Medical Disclaimer</h4>
-            <p className="text-sm text-yellow-100">
-              The information on this website is for educational purposes only and is not intended as medical advice. 
-              Always consult with a qualified healthcare professional before making health decisions. 
-              <Link href="/medical-disclaimer" className="underline hover:text-white ml-1">Read full disclaimer</Link>
-            </p>
-          </div>
-
-          {/* Affiliate Disclosure */}
-          <div className="mb-8 p-6 bg-gray-800 rounded-lg">
-            <h4 className="font-semibold text-gray-200 mb-2">Affiliate Disclosure</h4>
-            <p className="text-sm text-gray-300">
-              This website contains affiliate links. If you choose to purchase through these links, we may earn a 
-              commission at no additional cost to you. This helps us continue providing free health information. 
-              We only recommend products we believe may be helpful to our readers.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h3 className="text-lg font-bold mb-4">The Healthy Solutions Report</h3>
+              <h3 className="text-xl font-bold mb-4">The Healthy Solutions Report</h3>
               <p className="text-gray-400 text-sm">
-                Providing evidence-based health and wellness information to help you make informed decisions about your health.
+                Your trusted source for evidence-based health and wellness information.
               </p>
             </div>
-            
             <div>
-              <h4 className="text-lg font-semibold mb-4">About</h4>
+              <h4 className="font-semibold mb-4">Quick Links</h4>
               <ul className="space-y-2 text-sm">
+                <li><Link href="/" className="text-gray-400 hover:text-white">Home</Link></li>
                 <li><Link href="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
-                <li><Link href="/editorial-policy" className="text-gray-400 hover:text-white">Editorial Policy</Link></li>
-                <li><Link href="/contact" className="text-gray-400 hover:text-white">Contact Us</Link></li>
+                <li><Link href="/contact" className="text-gray-400 hover:text-white">Contact</Link></li>
               </ul>
             </div>
-            
             <div>
-              <h4 className="text-lg font-semibold mb-4">Legal</h4>
+              <h4 className="font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm">
                 <li><Link href="/privacy" className="text-gray-400 hover:text-white">Privacy Policy</Link></li>
                 <li><Link href="/medical-disclaimer" className="text-gray-400 hover:text-white">Medical Disclaimer</Link></li>
+                <li><Link href="/editorial-policy" className="text-gray-400 hover:text-white">Editorial Policy</Link></li>
               </ul>
             </div>
-            
             <div>
-              <h4 className="text-lg font-semibold mb-4">Resources</h4>
-              <p className="text-gray-400 text-sm mb-2">
-                {totalArticles.toLocaleString()}+ articles covering:
-              </p>
-              <ul className="space-y-1 text-sm text-gray-400">
-                <li>• Nutrition & Diet</li>
-                <li>• Mental Wellness</li>
-                <li>• Digestive Health</li>
-                <li>• Brain Health</li>
+              <h4 className="font-semibold mb-4">Topics</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li>Nutrition & Diet</li>
+                <li>Mental Wellness</li>
+                <li>Digestive Health</li>
+                <li>Brain Health</li>
               </ul>
             </div>
           </div>
-          
           <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
             <p>© {new Date().getFullYear()} The Healthy Solutions Report. All rights reserved.</p>
-            <p className="mt-2">Evidence-based health information you can trust.</p>
+            <p className="mt-2">
+              <strong>Affiliate Disclosure:</strong> This website contains affiliate links. We may earn a commission at no additional cost to you.
+            </p>
           </div>
         </div>
       </footer>
