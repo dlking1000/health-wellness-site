@@ -79,3 +79,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   
   return [...staticPages, ...articles]
 }
+
+  
+  console.log(`Sitemap generated with ${articles.length} articles`)
+  
+  return [...staticPages, ...articles]
+}
