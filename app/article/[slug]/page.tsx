@@ -4,6 +4,7 @@ import EmailPopup from '../../components/EmailPopup';
 import AdSenseAd from '../../components/AdSenseAd';
 import RelatedArticles from '../../components/RelatedArticles';
 import Breadcrumbs from '../../components/Breadcrumbs';
+import AuthorBio from '../../components/AuthorBio';
 
 interface Article {
   keyword: string;
@@ -188,14 +189,25 @@ export default async function ArticlePage({ params }: { params: { slug: string }
           </div>
         </article>
         
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">
-            Medical Disclaimer
-          </h3>
-          <p className="text-sm text-blue-800">
-            The information provided in this article is for educational purposes only and is not intended as medical advice. 
-            Always consult with a qualified healthcare provider before making any changes to your health regimen.
-          </p>
+        <AuthorBio />
+        
+        <div className="mt-8 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg p-6">
+          <div className="flex items-start">
+            <svg className="w-6 h-6 text-yellow-600 mr-3 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Medical Disclaimer
+              </h3>
+              <p className="text-sm text-gray-700 mb-2">
+                <strong>The information provided in this article is for educational and informational purposes only.</strong> It is not intended as a substitute for professional medical advice, diagnosis, or treatment.
+              </p>
+              <p className="text-sm text-gray-700">
+                Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition. Never disregard professional medical advice or delay in seeking it because of something you have read on this website. For more information, please read our <a href="/medical-disclaimer" className="text-blue-600 hover:text-blue-800 underline font-medium">full medical disclaimer</a>.
+              </p>
+            </div>
+          </div>
         </div>
         
         <RelatedArticles 
@@ -207,21 +219,24 @@ export default async function ArticlePage({ params }: { params: { slug: string }
       
       <EmailPopup />
       
-      <footer className="bg-gray-800 text-white mt-16">
+      <footer className="bg-gray-900 text-white mt-16">
         <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="mb-6 p-4 bg-gray-700 rounded-lg">
+          <div className="mb-6 p-4 bg-gray-800 rounded-lg">
             <p className="text-sm text-gray-300">
               <strong>Affiliate Disclosure:</strong> This website contains affiliate links. If you choose to purchase through these links, we may earn a commission at no additional cost to you. This helps us continue providing free health information.
             </p>
           </div>
           <div className="text-center">
-            <p className="text-sm">
+            <p className="text-sm mb-4">
               © {new Date().getFullYear()} The Healthy Solutions Report. All rights reserved.
             </p>
-            <div className="mt-4 space-x-4">
-              <a href="/about" className="text-sm hover:text-blue-400">About</a>
-              <a href="/privacy" className="text-sm hover:text-blue-400">Privacy Policy</a>
-              <a href="/contact" className="text-sm hover:text-blue-400">Contact</a>
+            <div className="flex flex-wrap justify-center gap-4 text-sm">
+              <a href="/" className="hover:text-blue-400">Home</a>
+              <a href="/about" className="hover:text-blue-400">About Us</a>
+              <a href="/editorial-policy" className="hover:text-blue-400">Editorial Policy</a>
+              <a href="/contact" className="hover:text-blue-400">Contact</a>
+              <a href="/privacy" className="hover:text-blue-400">Privacy Policy</a>
+              <a href="/medical-disclaimer" className="hover:text-blue-400">Medical Disclaimer</a>
             </div>
           </div>
         </div>
