@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
-import fs from 'fs';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
 import EmailPopup from '../../components/EmailPopup';
 import AdSenseAd from '../../components/AdSenseAd';
 import RelatedArticles from '../../components/RelatedArticles';
@@ -14,6 +13,7 @@ interface Article {
   word_count: number;
   products_mentioned: string[];
   generated_at: string;
+  slug: string;
 }
 
 interface ArticleListItem {
@@ -23,17 +23,25 @@ interface ArticleListItem {
   format: string;
 }
 
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ftfivtdofqnktacokgtj.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0Zml2dGRvZnFua3RhY29rZ3RqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzMDMyOTAsImV4cCI6MjA3Njg3OTI5MH0.4zjtYpTX18PlmYdfr-TlzrO9g1ZIKgkvTI859g359KQ';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
 async function getArticle(slug: string): Promise<Article | null> {
   try {
-    const articlesDir = path.join(process.cwd(), 'public/data/articles');
-    const filePath = path.join(articlesDir, `${slug}.json`);
+    const { data, error } = await supabase
+      .table('articles')
+      .select('*')
+      .eq('slug', slug)
+      .single();
     
-    if (!fs.existsSync(filePath)) {
+    if (error || !data) {
+      console.error('Error loading article:', error);
       return null;
     }
     
-    const fileContents = fs.readFileSync(filePath, 'utf8');
-    return JSON.parse(fileContents);
+    return data as Article;
   } catch (error) {
     console.error('Error loading article:', error);
     return null;
@@ -41,85 +49,75 @@ async function getArticle(slug: string): Promise<Article | null> {
 }
 
 async function getRelatedArticles(currentKeyword: string, currentSlug: string): Promise<ArticleListItem[]> {
-  const articlesDir = path.join(process.cwd(), 'public/data/articles');
-  
-  if (!fs.existsSync(articlesDir)) {
+  try {
+    // Get a sample of articles for matching
+    const { data: articles, error } = await supabase
+      .table('articles')
+      .select('keyword, title, slug, format')
+      .neq('slug', currentSlug)
+      .limit(200);
+    
+    if (error || !articles) {
+      return [];
+    }
+    
+    const currentWords = currentKeyword.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+    
+    interface ScoredArticle {
+      article: ArticleListItem;
+      score: number;
+    }
+    
+    const scoredArticles: ScoredArticle[] = [];
+    
+    for (const article of articles) {
+      const articleWords = article.keyword.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+      
+      // Calculate keyword overlap score
+      let score = 0;
+      for (const word of currentWords) {
+        if (articleWords.some((aw: string) => aw.includes(word) || word.includes(aw))) {
+          score += 2; // Exact or partial match
+        }
+      }
+      
+      // Bonus for same format type
+      if (article.format === currentKeyword.split(' ')[0]) {
+        score += 1;
+      }
+      
+      scoredArticles.push({
+        article: {
+          keyword: article.keyword,
+          title: article.title,
+          slug: article.slug,
+          format: article.format || 'Article'
+        },
+        score: score
+      });
+    }
+    
+    // Sort by score and take top 6
+    scoredArticles.sort((a, b) => b.score - a.score);
+    
+    // Get top 4 most relevant + 2 random for diversity
+    const topRelevant = scoredArticles.slice(0, 4).map(sa => sa.article);
+    const randomOnes = scoredArticles.slice(4).sort(() => 0.5 - Math.random()).slice(0, 2).map(sa => sa.article);
+    
+    return [...topRelevant, ...randomOnes];
+  } catch (error) {
+    console.error('Error loading related articles:', error);
     return [];
   }
-  
-  const files = fs.readdirSync(articlesDir);
-  const currentWords = currentKeyword.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-  
-  interface ScoredArticle {
-    article: ArticleListItem;
-    score: number;
-  }
-  
-  const scoredArticles: ScoredArticle[] = [];
-  
-  // Sample a larger set for better matching (200 articles)
-  const sampleSize = Math.min(200, files.length);
-  const sampledFiles = files
-    .filter(file => file.endsWith('.json') && file.replace('.json', '') !== currentSlug)
-    .sort(() => 0.5 - Math.random())
-    .slice(0, sampleSize);
-  
-  for (const file of sampledFiles) {
-    try {
-      const filePath = path.join(articlesDir, file);
-      const content = fs.readFileSync(filePath, 'utf-8');
-      const article = JSON.parse(content);
-      
-      if (article.keyword && article.title) {
-        const slug = file.replace('.json', '');
-        const articleWords = article.keyword.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
-        
-        // Calculate keyword overlap score
-        let score = 0;
-        for (const word of currentWords) {
-          if (articleWords.some((aw: string) => aw.includes(word) || word.includes(aw))) {
-            score += 2; // Exact or partial match
-          }
-        }
-        
-        // Bonus for same format type
-        if (article.format === currentKeyword.split(' ')[0]) {
-          score += 1;
-        }
-        
-        scoredArticles.push({
-          article: {
-            keyword: article.keyword,
-            title: article.title,
-            slug: slug,
-            format: article.format || 'Article'
-          },
-          score: score
-        });
-      }
-    } catch (error) {
-      console.error(`Error reading ${file}:`, error);
-    }
-  }
-  
-  // Sort by score and take top 6
-  scoredArticles.sort((a, b) => b.score - a.score);
-  
-  // Get top 4 most relevant + 2 random for diversity
-  const topRelevant = scoredArticles.slice(0, 4).map(sa => sa.article);
-  const randomOnes = scoredArticles.slice(4).sort(() => 0.5 - Math.random()).slice(0, 2).map(sa => sa.article);
-  
-  return [...topRelevant, ...randomOnes];
 }
 
-// CRITICAL: Remove generateStaticParams to enable dynamic rendering
-// This allows all 9,981 articles to be accessible without pre-building them
-
-export const dynamic = 'force-dynamic'; // Force dynamic rendering
-export const dynamicParams = true; // Allow dynamic params
+// CRITICAL: Force dynamic rendering for all articles
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const article = await getArticle(params.slug);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://thehealthysolutionsreport.com';
   
   if (!article) {
     return {
@@ -127,9 +125,28 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     };
   }
   
+  const articleUrl = `${siteUrl}/article/${params.slug}`;
+  const description = article.content.substring(0, 160).replace(/[#*]/g, '');
+  
   return {
     title: `${article.title} | The Healthy Solutions Report`,
-    description: article.content.substring(0, 160).replace(/[#*]/g, ''),
+    description: description,
+    openGraph: {
+      title: article.title,
+      description: description,
+      url: articleUrl,
+      siteName: "The Healthy Solutions Report",
+      locale: "en_US",
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description: description,
+    },
+    alternates: {
+      canonical: articleUrl,
+    },
   };
 }
 
@@ -265,4 +282,3 @@ function convertMarkdownToHTML(markdown: string, includeAds: boolean = false): s
   
   return html;
 }
-
