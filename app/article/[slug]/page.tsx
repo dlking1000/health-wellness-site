@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '../../../lib/supabase';
 import EmailPopup from '../../components/EmailPopup';
 import AdSenseAd from '../../components/AdSenseAd';
 import RelatedArticles from '../../components/RelatedArticles';
@@ -23,10 +23,8 @@ interface ArticleListItem {
   format: string;
 }
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ftfivtdofqnktacokgtj.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0Zml2dGRvZnFua3RhY29rZ3RqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzMDMyOTAsImV4cCI6MjA3Njg3OTI5MH0.4zjtYpTX18PlmYdfr-TlzrO9g1ZIKgkvTI859g359KQ';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Use the Supabase client from lib
+const supabase = createClient();
 
 async function getArticle(slug: string): Promise<Article | null> {
   try {
