@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { createClient } from '../../../lib/supabase';
+import { supabase } from '@/app/lib/supabase';
 import EmailPopup from '../../components/EmailPopup';
 import AdSenseAd from '../../components/AdSenseAd';
 import RelatedArticles from '../../components/RelatedArticles';
@@ -23,8 +23,7 @@ interface ArticleListItem {
   format: string;
 }
 
-// Use the Supabase client from lib
-const supabase = createClient();
+// Supabase client is imported from lib
 
 async function getArticle(slug: string): Promise<Article | null> {
   try {
