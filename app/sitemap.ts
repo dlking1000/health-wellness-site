@@ -1,83 +1,283 @@
-import { MetadataRoute } from 'next';
-import { createClient } from '../../lib/supabase';
+import { notFound } from 'next/navigation';
+import { supabase } from '@/app/lib/supabase';
+import EmailPopup from '../../components/EmailPopup';
+import AdSenseAd from '../../components/AdSenseAd';
+import RelatedArticles from '../../components/RelatedArticles';
+import Breadcrumbs from '../../components/Breadcrumbs';
 
-// Force dynamic generation of sitemap
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+interface Article {
+  keyword: string;
+  title: string;
+  content: string;
+  format: string;
+  word_count: number;
+  products_mentioned: string[];
+  generated_at: string;
+  slug: string;
+}
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://thehealthysolutionsreport.com'
-  
-  // Use the Supabase client from lib
-  const supabase = createClient();
-  
-  // Fetch all articles from database with pagination
-  const articles: MetadataRoute.Sitemap = []
-  let offset = 0
-  const pageSize = 1000
-  
+interface ArticleListItem {
+  keyword: string;
+  title: string;
+  slug: string;
+  format: string;
+}
+
+// Supabase client is imported from lib
+
+async function getArticle(slug: string): Promise<Article | null> {
   try {
-    while (true) {
-      const { data, error } = await supabase
-        .table('articles')
-        .select('slug, generated_at')
-        .range(offset, offset + pageSize - 1)
-      
-      if (error) {
-        console.error('Error fetching articles for sitemap:', error)
-        break
-      }
-      
-      if (!data || data.length === 0) {
-        break
-      }
-      
-      // Add articles to sitemap
-      data.forEach((article) => {
-        articles.push({
-          url: `${baseUrl}/article/${article.slug}`,
-          lastModified: article.generated_at ? new Date(article.generated_at) : new Date(),
-          changeFrequency: 'monthly',
-          priority: 0.7,
-        })
-      })
-      
-      offset += pageSize
-      
-      // Break if we got less than a full page (last batch)
-      if (data.length < pageSize) {
-        break
-      }
+    const { data, error } = await supabase
+      .table('articles')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+    
+    if (error || !data) {
+      console.error('Error loading article:', error);
+      return null;
     }
+    
+    return data as Article;
   } catch (error) {
-    console.error('Error generating sitemap:', error)
+    console.error('Error loading article:', error);
+    return null;
+  }
+}
+
+async function getRelatedArticles(currentKeyword: string, currentSlug: string): Promise<ArticleListItem[]> {
+  try {
+    // Get a sample of articles for matching
+    const { data: articles, error } = await supabase
+      .table('articles')
+      .select('keyword, title, slug, format')
+      .neq('slug', currentSlug)
+      .limit(200);
+    
+    if (error || !articles) {
+      return [];
+    }
+    
+    const currentWords = currentKeyword.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+    
+    interface ScoredArticle {
+      article: ArticleListItem;
+      score: number;
+    }
+    
+    const scoredArticles: ScoredArticle[] = [];
+    
+    for (const article of articles) {
+      const articleWords = article.keyword.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+      
+      // Calculate keyword overlap score
+      let score = 0;
+      for (const word of currentWords) {
+        if (articleWords.some((aw: string) => aw.includes(word) || word.includes(aw))) {
+          score += 2; // Exact or partial match
+        }
+      }
+      
+      // Bonus for same format type
+      if (article.format === currentKeyword.split(' ')[0]) {
+        score += 1;
+      }
+      
+      scoredArticles.push({
+        article: {
+          keyword: article.keyword,
+          title: article.title,
+          slug: article.slug,
+          format: article.format || 'Article'
+        },
+        score: score
+      });
+    }
+    
+    // Sort by score and take top 6
+    scoredArticles.sort((a, b) => b.score - a.score);
+    
+    // Get top 4 most relevant + 2 random for diversity
+    const topRelevant = scoredArticles.slice(0, 4).map(sa => sa.article);
+    const randomOnes = scoredArticles.slice(4).sort(() => 0.5 - Math.random()).slice(0, 2).map(sa => sa.article);
+    
+    return [...topRelevant, ...randomOnes];
+  } catch (error) {
+    console.error('Error loading related articles:', error);
+    return [];
+  }
+}
+
+// CRITICAL: Force dynamic rendering for all articles
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
+export async function generateMetadata({ params }: { params: { slug: string } }) {
+  const article = await getArticle(params.slug);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://thehealthysolutionsreport.com';
+  
+  if (!article) {
+    return {
+      title: 'Article Not Found',
+    };
   }
   
-  // Add homepage and other static pages
-  const staticPages: MetadataRoute.Sitemap = [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/about`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
-  ]
+  const articleUrl = `${siteUrl}/article/${params.slug}`;
+  const description = article.content.substring(0, 160).replace(/[#*]/g, '');
   
-  console.log(`Sitemap generated with ${articles.length} articles`)
+  return {
+    title: `${article.title} | The Healthy Solutions Report`,
+    description: description,
+    openGraph: {
+      title: article.title,
+      description: description,
+      url: articleUrl,
+      siteName: "The Healthy Solutions Report",
+      locale: "en_US",
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description: description,
+    },
+    alternates: {
+      canonical: articleUrl,
+    },
+  };
+}
+
+export default async function ArticlePage({ params }: { params: { slug: string } }) {
+  const article = await getArticle(params.slug);
   
-  return [...staticPages, ...articles]
+  if (!article) {
+    notFound();
+  }
+  
+  const relatedArticles = await getRelatedArticles(article.keyword, params.slug);
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <a href="/" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+            ← Back to Home
+          </a>
+          <h1 className="text-4xl font-bold text-gray-900 mt-4">
+            The Healthy Solutions Report
+          </h1>
+        </div>
+      </header>
+      
+      <main className="max-w-4xl mx-auto px-4 py-8">
+        <Breadcrumbs articleTitle={article.title} articleFormat={article.format} />
+        <article className="bg-white rounded-lg shadow-md p-8">
+          <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+            <p className="text-sm text-gray-700">
+              <strong>Disclosure:</strong> This article contains affiliate links. If you choose to purchase through these links, we may earn a commission at no additional cost to you. This helps us continue providing free health information.
+            </p>
+          </div>
+          <div className="prose prose-lg max-w-none">
+            <div dangerouslySetInnerHTML={{ __html: convertMarkdownToHTML(article.content, true) }} />
+          </div>
+          
+          <div className="mt-8 pt-8 border-t border-gray-200">
+            <p className="text-sm text-gray-600">
+              <strong>Category:</strong> {article.format} | <strong>Keywords:</strong> {article.keyword}
+            </p>
+          </div>
+        </article>
+        
+        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">
+            Medical Disclaimer
+          </h3>
+          <p className="text-sm text-blue-800">
+            The information provided in this article is for educational purposes only and is not intended as medical advice. 
+            Always consult with a qualified healthcare provider before making any changes to your health regimen.
+          </p>
+        </div>
+        
+        <RelatedArticles 
+          currentKeyword={article.keyword}
+          currentSlug={params.slug}
+          allArticles={relatedArticles}
+        />
+      </main>
+      
+      <EmailPopup />
+      
+      <footer className="bg-gray-800 text-white mt-16">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="mb-6 p-4 bg-gray-700 rounded-lg">
+            <p className="text-sm text-gray-300">
+              <strong>Affiliate Disclosure:</strong> This website contains affiliate links. If you choose to purchase through these links, we may earn a commission at no additional cost to you. This helps us continue providing free health information.
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm">
+              © {new Date().getFullYear()} The Healthy Solutions Report. All rights reserved.
+            </p>
+            <div className="mt-4 space-x-4">
+              <a href="/about" className="text-sm hover:text-blue-400">About</a>
+              <a href="/privacy" className="text-sm hover:text-blue-400">Privacy Policy</a>
+              <a href="/contact" className="text-sm hover:text-blue-400">Contact</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function convertMarkdownToHTML(markdown: string, includeAds: boolean = false): string {
+  let html = markdown;
+  
+  // Convert headers
+  html = html.replace(/^### (.*$)/gim, '<h3 class="text-xl font-semibold mt-6 mb-3">$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold mt-8 mb-4">$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold mt-8 mb-4">$1</h1>');
+  
+  // Convert bold
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  // Convert links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer nofollow">$1</a>');
+  
+  // Convert lists
+  html = html.replace(/^\* (.*$)/gim, '<li class="ml-6 mb-2">$1</li>');
+  html = html.replace(/^- (.*$)/gim, '<li class="ml-6 mb-2">$1</li>');
+  
+  // Wrap lists in ul tags
+  html = html.replace(/(<li[\s\S]*?<\/li>)/g, '<ul class="list-disc my-4">$1</ul>');
+  
+  // Convert paragraphs
+  const paragraphs = html.split('\n\n').map(para => {
+    if (para.startsWith('<h') || para.startsWith('<ul') || para.startsWith('<li')) {
+      return para;
+    }
+    return `<p class="mb-4 leading-relaxed">${para}</p>`;
+  });
+  
+  // Inject AdSense ads at strategic positions if requested
+  if (includeAds && paragraphs.length > 5) {
+    const adHTML = '<div class="my-8"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-3425980701787946" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script></div>';
+    
+    // Insert ads at 25%, 50%, and 75% through the content
+    const positions = [
+      Math.floor(paragraphs.length * 0.25),
+      Math.floor(paragraphs.length * 0.50),
+      Math.floor(paragraphs.length * 0.75)
+    ];
+    
+    positions.reverse().forEach(pos => {
+      paragraphs.splice(pos, 0, adHTML);
+    });
+  }
+  
+  html = paragraphs.join('\n');
+  
+  return html;
 }
 
   
